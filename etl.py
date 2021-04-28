@@ -6,45 +6,87 @@ import pandas as pd
 from sql_queries import *
 
 
-def process_song_file(cursor, folderpath, file_ext):
-    # open song file
-    song_files = utils.get_files(folderpath, file_ext)
+def process_song_file(cursor, filepath):
     
-    df = 
+    # open song file    
+    df = pd.read_json(filepath, lines = True)
 
-    # insert song record
-    song_data = 
-    cursor.execute(song_table_insert, song_data)
+    # get song data
+    song_data = list(*df[['song_id', 'title', 'artist_id', 'year', 'duration']].values)
     
-    # insert artist record
-    artist_data = 
-    cursor.execute(artist_table_insert, artist_data)
+    # insert song data
+    try:
+        cursor.execute(song_table_insert, song_data)
+    except:
+        psycopg2.Error as e:
+            print('ERROR: Could not insert this song data:')
+            print(song_data)
+            print(e)
+    
+    # get artist record
+    artist_data = list(*songs_df[['artist_id', 'artist_name', 
+                                  'artist_location', 'artist_latitude', 'artist_longitude']].values)
+    # insert artist data
+    try:
+        cursor.execute(artist_table_insert, artist_data)
+    except psycopg2.Error as e:
+        print('ERROR: Could not insert this artist data:')
+        print(artist_data)
+        print(e)
 
 
-def process_log_file(cursor, folderpath):
+def process_log_file(cursor, filepath):
+    
     # open log file
-    df = 
+    df = pd.read_json(filepath, lines = True)
 
     # filter by NextSong action
-    df = 
+    df = df.query('page == "NextSong"')
 
     # convert timestamp column to datetime
-    t = 
+    t = pd.to_datetime(df['ts'], unit = 'ms')
+    
+    # Extract the timestamp, hour, day, week of year, month, year, and weekday from the ts column 
+    start_time = t.copy()
+    
+    if len(str(start_time)) == 19:
+        raise "timestamp 19 digits long instead of 13 expected by database"
+    
+    hour = start_time.dt.hour
+    day = start_time.dt.day
+    week = start_time.dt.weekofyear
+    month = start_time.dt.month
+    year = start_time.dt.year
+    weekday = start_time.dt.weekday
+
+
+    time_vars = [start_time, hour, day, week, month, year, weekday]
+    time_data = [series.values.tolist() for series in time_vars ]
+    column_labels = [utils.var_name(col, globals())[0] for col in time_vars] # to ensure proper order
+    time_df = pd.DataFrame(dict(zip(column_labels, time_data)))
     
     # insert time data records
-    time_data = 
-    column_labels = 
-    time_df = 
-
     for i, row in time_df.iterrows():
-        cursor.execute(time_table_insert, list(row))
+        try:
+            cursor.execute(time_table_insert, list(row))
+        except psycopg2.Error as e:
+            print('ERROR: Could not insert this time data record:')
+            print(list(row))
+            print(e)
 
     # load user table
-    user_df = 
+    # Nota Bene: 
+    # We dropped duplicates & missing values to abide by the constraints of user_id being PRIMARY KEY 
+    user_df = df[['userId', 'firstName', 'lastName', 'gender', 'level']].drop_duplicates().dropna()
 
     # insert user records
     for i, row in user_df.iterrows():
-        cursor.execute(user_table_insert, row)
+        try:
+            cursor.execute(user_table_insert, list(row))
+        except.psycopg2.Error as e:
+            print('ERROR: Could not insert this user data record:')
+            print(list(row))
+            print(e)
 
     # insert songplay records
     for index, row in df.iterrows():
@@ -58,9 +100,38 @@ def process_log_file(cursor, folderpath):
         else:
             songid, artistid = None, None
 
+        
+        
+        # Select song_play data
+        timestamp = row['ts']
+        
+        if len(str(timestamp)) == 19:
+            raise "timestamp 19 digits long instead of 13 expected by database"
+
+        # Some userIDs were missing. 
+        # This catch should allow us to "ignore" rows that contain them.
+        try:
+            user_id = int(row['userId'])
+        except ValueError:
+            break
+
+        level = row['level']
+        session_id = row['sessionId']
+        location = row['location']
+        user_agent = row['userAgent']
+
+        #and set to songplay_data
+        songplay_data = (timestamp, user_id, level, 
+                         songid, artistid, session_id , 
+                         location, user_agent)    
+
         # insert songplay record
-        songplay_data = 
-        cursor.execute(songplay_table_insert, songplay_data)
+        try:
+            cursor.execute(songplay_table_insert, songplay_data)
+        except psycopg2.Error as e:
+            print('ERROR: Could not insert this songplay record:')
+            print(songplay_data)
+            print(e)
 
 
 def process_data(cursor, connection, folderpath, file_ext, func):
@@ -72,8 +143,8 @@ def process_data(cursor, connection, folderpath, file_ext, func):
     print('{} files found in {}'.format(num_files, folderpath))
 
     # iterate over files and process
-    for i, datafile in enumerate(all_files, 1):
-        func(cursor, datafile)
+    for i, filepath in enumerate(all_files, 1):
+        func(cursor, filepath)
         connection.commit()
         print('{}/{} files processed.'.format(i, num_files))
 
