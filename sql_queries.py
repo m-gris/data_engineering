@@ -10,7 +10,7 @@ time_table_drop = "DROP TABLE IF EXISTS time"
 
 # CREATE TABLES
 
-# FACT TABLE - songplay -> records in log data associated with song plays i.e. records with page NextSong
+## FACT TABLE - songplay -> records in log data associated with song plays i.e. records with page NextSong
 songplays_table_create = ("""
                          CREATE TABLE IF NOT EXISTS songplays (songplay_id SERIAL PRIMARY KEY, 
                                                                start_time timestamp,
@@ -24,9 +24,9 @@ songplays_table_create = ("""
 
                          """)
 
-# DIMENSION TABLES
+## DIMENSION TABLES
 
-# users - users in the app
+### users - users in the app
 users_table_create = ("""CREATE TABLE IF NOT EXISTS users (user_id int PRIMARY KEY, 
                                                           first_name varchar, 
                                                           last_name varchar, 
@@ -34,7 +34,7 @@ users_table_create = ("""CREATE TABLE IF NOT EXISTS users (user_id int PRIMARY K
                                                           level varchar)
 """)
 
-# songs - songs in music database
+### songs - songs in music database
 songs_table_create = ("""
                     CREATE TABLE IF NOT EXISTS songs (song_id varchar PRIMARY KEY, 
                                                       title varchar, 
@@ -43,7 +43,7 @@ songs_table_create = ("""
                                                       duration float)
                      """)
 
-###artists - artists in music database
+### artists - artists in music database
 artists_table_create = (""" 
                        CREATE TABLE IF NOT EXISTS artists (artist_id varchar PRIMARY KEY, 
                                                            name varchar, 
@@ -53,7 +53,7 @@ artists_table_create = ("""
                        """)
 
 ### time - timestamps of records in songplays broken down into specific units
-time_table_create = (""" CREATE TABLE IF NOT EXISTS time (start_time datetime PRIMARY KEY, 
+time_table_create = (""" CREATE TABLE IF NOT EXISTS time (start_time timestamp PRIMARY KEY, 
                                                           hour int, 
                                                           day int, 
                                                           week int, 
@@ -65,10 +65,11 @@ time_table_create = (""" CREATE TABLE IF NOT EXISTS time (start_time datetime PR
 # INSERT RECORDS
 
 songplays_table_insert = ("""
-                          INSERT INTO songplays(songplay_id,start_time, user_id, level, song_id , 
+                          INSERT INTO songplays(start_time, user_id, level, song_id, 
                                                 artist_id , session_id , location , user_agent) 
-                                         VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s )
+                                         VALUES(to_timestamp(%s), %s, %s, %s, %s, %s, %s, %s )
                           """)
+                    
 
 users_table_insert = ("""
                       INSERT INTO users(user_id, first_name, last_name, gender, level)
@@ -76,22 +77,32 @@ users_table_insert = ("""
                       """)
 
 songs_table_insert = ("""
-                      INSERT INTO songs(song_id, title, artist_id, year, duration)
-                                  VALUES(%s, %s, %s, %s, %s)
+                      INSERT INTO songs("song_id", "title", "artist_id", "year", "duration")
+                                 VALUES(%s, %s, %s, %s, %s)
                       """)
 
 artists_table_insert = ("""
-                        INSERTO INTO artists(artist_id, name, location, latitude, longitude)
+                        INSERT INTO artists(artist_id, name, location, latitude, longitude)
                                       VALUES(%s, %s, %s, %s, %s)
 """)
 
 time_table_insert = ("""
                      INSERT INTO time(start_time, hour, day, week, month, year, weekday)
-                                 VALUES(%s, %s, %s, %s, %s, %s, %s)
+                                 VALUES(to_timestamp(%s), %s, %s, %s, %s, %s, %s)
 """)
 
 # FIND SONGS
-song_select = (""" TO COMPLETE !!!!!!!!!!!!   """)
+## to find the song ID and artist ID based on the title, artist name, and duration of a song.
+song_select = ("""
+               SELECT songs.song_id, artists.artist_id, songs.duration
+               FROM songs
+               JOIN artists ON songs.artist_id = artists.artist_id
+               WHERE songs.title=%s 
+                     AND 
+                     artists.name=%s 
+                     AND 
+                     songs.duration=%s
+               """)
 
 # QUERY LISTS
 create_table_queries = [songplays_table_create, users_table_create, songs_table_create, artists_table_create, time_table_create]
