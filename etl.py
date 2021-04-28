@@ -16,19 +16,18 @@ def process_song_file(cursor, filepath):
     
     # insert song data
     try:
-        cursor.execute(song_table_insert, song_data)
-    except:
-        psycopg2.Error as e:
-            print('ERROR: Could not insert this song data:')
-            print(song_data)
-            print(e)
+        cursor.execute(songs_table_insert, song_data)
+    except psycopg2.Error as e:
+        error_message = 'ERROR: Could not insert this song data:\n' 
+        print(song_data)
+        print(e)
     
     # get artist record
-    artist_data = list(*songs_df[['artist_id', 'artist_name', 
-                                  'artist_location', 'artist_latitude', 'artist_longitude']].values)
+    artist_data = list(*df[['artist_id', 'artist_name', 
+                            'artist_location', 'artist_latitude', 'artist_longitude']].values)
     # insert artist data
     try:
-        cursor.execute(artist_table_insert, artist_data)
+        cursor.execute(artists_table_insert, artist_data)
     except psycopg2.Error as e:
         print('ERROR: Could not insert this artist data:')
         print(artist_data)
@@ -44,25 +43,25 @@ def process_log_file(cursor, filepath):
     df = df.query('page == "NextSong"')
 
     # convert timestamp column to datetime
-    t = pd.to_datetime(df['ts'], unit = 'ms')
+    t = pd.to_datetime(df['ts'], unit = 'ms') 
     
     # Extract the timestamp, hour, day, week of year, month, year, and weekday from the ts column 
-    start_time = t.copy()
+    start_time = (t.copy()).astype(int)/1000000
     
-    if len(str(start_time)) == 19:
-        raise "timestamp 19 digits long instead of 13 expected by database"
+#     if len(str(start_time)) == 19:
+#         raise "timestamp 19 digits long instead of 13 expected by database"
     
-    hour = start_time.dt.hour
-    day = start_time.dt.day
-    week = start_time.dt.weekofyear
-    month = start_time.dt.month
-    year = start_time.dt.year
-    weekday = start_time.dt.weekday
+    hour = t.dt.hour
+    day = t.dt.day
+    week = t.dt.weekofyear
+    month = t.dt.month
+    year = t.dt.year
+    weekday = t.dt.weekday
 
 
     time_vars = [start_time, hour, day, week, month, year, weekday]
     time_data = [series.values.tolist() for series in time_vars ]
-    column_labels = [utils.var_name(col, globals())[0] for col in time_vars] # to ensure proper order
+    column_labels = ['start_time', 'hour', 'day', 'week', 'month', 'year', 'weekday']
     time_df = pd.DataFrame(dict(zip(column_labels, time_data)))
     
     # insert time data records
@@ -82,8 +81,8 @@ def process_log_file(cursor, filepath):
     # insert user records
     for i, row in user_df.iterrows():
         try:
-            cursor.execute(user_table_insert, list(row))
-        except.psycopg2.Error as e:
+            cursor.execute(users_table_insert, list(row))
+        except psycopg2.Error as e:
             print('ERROR: Could not insert this user data record:')
             print(list(row))
             print(e)
@@ -96,7 +95,7 @@ def process_log_file(cursor, filepath):
         results = cursor.fetchone()
         
         if results:
-            songid, artistid = results
+            songid, artistid, _ = results
         else:
             songid, artistid = None, None
 
@@ -127,7 +126,7 @@ def process_log_file(cursor, filepath):
 
         # insert songplay record
         try:
-            cursor.execute(songplay_table_insert, songplay_data)
+            cursor.execute(songplays_table_insert, songplay_data)
         except psycopg2.Error as e:
             print('ERROR: Could not insert this songplay record:')
             print(songplay_data)
