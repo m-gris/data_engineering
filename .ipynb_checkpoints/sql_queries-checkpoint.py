@@ -65,28 +65,36 @@ time_table_create = (""" CREATE TABLE IF NOT EXISTS time (start_time timestamp P
 # INSERT RECORDS
 
 songplays_table_insert = ("""
-                          INSERT INTO songplays(start_time, user_id, level, song_id , 
+                          INSERT INTO songplays(start_time, user_id, level, song_id, 
                                                 artist_id , session_id , location , user_agent) 
                                          VALUES(%s, %s, %s, %s, %s, %s, %s, %s )
+                          ON CONFLICT DO NOTHING
                           """)
                     
 
 users_table_insert = ("""
                       INSERT INTO users(user_id, first_name, last_name, gender, level)
                                   VALUES(%s, %s, %s, %s, %s)
+                      ON CONFLICT DO NOTHING
                       """)
 
-songs_table_insert = ("""INSERT INTO songs("song_id", "title", "artist_id", "year", "duration")VALUES(%s, %s, %s, %s, %s)""")
+songs_table_insert = ("""
+                      INSERT INTO songs("song_id", "title", "artist_id", "year", "duration")
+                                 VALUES(%s, %s, %s, %s, %s)
+                      ON CONFLICT DO NOTHING
+                      """)
 
 artists_table_insert = ("""
                         INSERT INTO artists(artist_id, name, location, latitude, longitude)
                                       VALUES(%s, %s, %s, %s, %s)
-""")
+                        ON CONFLICT DO NOTHING
+                        """)
 
 time_table_insert = ("""
                      INSERT INTO time(start_time, hour, day, week, month, year, weekday)
                                  VALUES(%s, %s, %s, %s, %s, %s, %s)
-""")
+                     ON CONFLICT DO NOTHING
+                     """)
 
 # FIND SONGS
 ## to find the song ID and artist ID based on the title, artist name, and duration of a song.

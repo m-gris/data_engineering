@@ -40,28 +40,26 @@ def process_log_file(cursor, filepath):
     df = pd.read_json(filepath, lines = True)
 
     # filter by NextSong action
-    df = df.query('page == "NextSong"')
+    df = df.query('page == "NextSong"').copy(deep =True)
 
-    # convert timestamp column to datetime
-    t = pd.to_datetime(df['ts'], unit = 'ms') 
-    
-    # Extract the timestamp, hour, day, week of year, month, year, and weekday from the ts column 
-    start_time = (t.copy()).astype(int)/1000000
-    
-#     if len(str(start_time)) == 19:
-#         raise "timestamp 19 digits long instead of 13 expected by database"
-    
-    hour = t.dt.hour
-    day = t.dt.day
-    week = t.dt.weekofyear
-    month = t.dt.month
-    year = t.dt.year
-    weekday = t.dt.weekday
+    # convert timestamp column to datetime & extract  hour, day, week of year, month, year, and weekday
+    df.loc[:, 'ts'] = pd.to_datetime(df['ts'].copy(deep=True), unit = 'ms')
+    start_time = df['ts']
+    hour = start_time.dt.hour
+    day = start_time.dt.day
+    week = start_time.dt.weekofyear
+    month = start_time.dt.month
+    year = start_time.dt.year
+    weekday = start_time.dt.weekday
 
-
-    time_vars = [start_time, hour, day, week, month, year, weekday]
-    time_data = [series.values.tolist() for series in time_vars ]
+    time_data = [start_time, hour, day, week, month, year, weekday]
+    
+    # Create columns labels in a "safe way" (to be sure that the order is correct)
+    # INTERISTING but... IndexError: list index out of range
+#      column_labels = [utils.var_name(x, globals())[0] for x in time_data]
     column_labels = ['start_time', 'hour', 'day', 'week', 'month', 'year', 'weekday']
+    
+    # Create df with time data
     time_df = pd.DataFrame(dict(zip(column_labels, time_data)))
     
     # insert time data records
@@ -99,14 +97,9 @@ def process_log_file(cursor, filepath):
         else:
             songid, artistid = None, None
 
-        
-        
         # Select song_play data
         timestamp = row['ts']
         
-        if len(str(timestamp)) == 19:
-            raise "timestamp 19 digits long instead of 13 expected by database"
-
         # Some userIDs were missing. 
         # This catch should allow us to "ignore" rows that contain them.
         try:
