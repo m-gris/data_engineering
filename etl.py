@@ -105,7 +105,7 @@ def process_log_file(cursor, filepath):
         try:
             user_id = int(row['userId'])
         except ValueError:
-            break
+            continue
 
         level = row['level']
         session_id = row['sessionId']
