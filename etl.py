@@ -7,6 +7,16 @@ from sql_queries import *
 
 
 def process_song_file(cursor, filepath):
+    '''
+    Fruitless procedure that:
+        - Reads data from json file from the songs dataset
+        - And insert the relevant columns into songs_table and artists_table
+    Input:
+          cursor: the cursor object to perform operations on the database
+          filepath: str
+    Ouput: 
+          None
+    '''
     
     # open song file    
     df = pd.read_json(filepath, lines = True)
@@ -35,6 +45,16 @@ def process_song_file(cursor, filepath):
 
 
 def process_log_file(cursor, filepath):
+    '''
+    Fruitless procedure that:
+        - Reads data from json file from the log dataset
+        - And insert the relevant columns into time_table, users_table and songplays_table
+    Input:
+          cursor: the cursor object to perform operations on the database
+          filepath: str
+    Ouput: 
+          None
+    '''
     
     # open log file
     df = pd.read_json(filepath, lines = True)
@@ -127,6 +147,19 @@ def process_log_file(cursor, filepath):
 
 
 def process_data(cursor, connection, folderpath, file_ext, func):
+    '''
+    Fruitless procedure that will:
+        - get all files that end with the specifid file_ext in the folderpath
+        - apply the specified func to each of those files
+    Input:
+        cursor: the cursor object to perform operations on the database 
+        connection: connection object providing access to the database
+        folderpath: str
+        file_ext: str
+        func: function object
+    Ouput:
+        None
+    '''
     # get all files matching extension from directory
     all_files = utils.get_files(folderpath, file_ext)
 

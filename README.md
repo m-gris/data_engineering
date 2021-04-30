@@ -2,6 +2,20 @@
 
 A collection of scripts, modules and notebooks to implement an ETL pipeline using Python and PostgreSQL.
 
+
+### How to run the scripts
+In a terminal simply run the following: 
+
+First:
+```bash
+user_name $ python create_tables.py
+```
+
+Then 
+```bash 
+user_name $ python etl.py
+```
+
 ### DATABASE SCHEMA 
 A star schema has been implemented for queries' ease and efficiency. 
 
