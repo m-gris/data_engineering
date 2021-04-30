@@ -18,7 +18,7 @@ songplays_table_create = ("""
                                                                level varchar, 
                                                                song_id varchar, 
                                                                artist_id varchar, 
-                                                               session_id int, 
+                                                               session_id int NOT NULL, 
                                                                location varchar, 
                                                                user_agent varchar)
 
@@ -38,7 +38,7 @@ users_table_create = ("""CREATE TABLE IF NOT EXISTS users (user_id int PRIMARY K
 songs_table_create = ("""
                     CREATE TABLE IF NOT EXISTS songs (song_id varchar PRIMARY KEY, 
                                                       title varchar, 
-                                                      artist_id varchar, 
+                                                      artist_id varchar NOT NULL, 
                                                       year int, 
                                                       duration float)
                      """)
@@ -68,7 +68,12 @@ songplays_table_insert = ("""
                           INSERT INTO songplays(start_time, user_id, level, song_id, 
                                                 artist_id , session_id , location , user_agent) 
                                          VALUES(%s, %s, %s, %s, %s, %s, %s, %s )
-                          ON CONFLICT DO NOTHING
+                          
+                          ON CONFLICT level
+                              DO UPDATE SET level = EXCLUDED.level
+                          
+                          ON CONFLICT (tables, artists, songs, time)
+                              DO NOTHING
                           """)
                     
 
